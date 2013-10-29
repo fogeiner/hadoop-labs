@@ -24,6 +24,30 @@ import org.apache.hadoop.util.*;
 
 public class PageRank {
 
+	private static double eps = 1e-5;
+
+	public static double getEps() {
+		return eps;
+	}
+
+	private static int matrixSize;
+
+	private static int getMatrixSize() {
+		return matrixSize;
+	}
+
+	private static void setMatrixSize(int matrixSize) {
+		PageRank.matrixSize = matrixSize;
+	}
+
+	private static List<Float> generateVector(int size) {
+		List<Float> vector = new ArrayList<Float>(size);
+		for (int i = 0; i < size; ++i) {
+			vector.add(1.0F / size);
+		}
+		return vector;
+	}
+
 	private static JobConf processGraph(Path in, Path out) {
 		JobConf job = new JobConf(GraphToMatrix.class);
 		job.setJobName("graphtomatrix");
@@ -67,38 +91,16 @@ public class PageRank {
 		return job;
 	}
 
-    private static double distance(List<Float> v1, List<Float> v2) {
-        if (v1.size() != v2.size()) {
-            throw new IllegalArgumentException("Vectors cannot have different lengths");
-        }
-        double diff = 0;
-        for (int i = 0; i < v1.size(); ++i) {
-            diff += Math.abs(v1.get(i) - v2.get(i));
-        }
-        return diff;
-    }
-    
-    private static double eps = 1e-5;
-    public static double getEps() {
-    	return eps;
-    }
-	
-	private static int matrixSize;
-
-	private static int getMatrixSize() {
-		return matrixSize;
-	}
-
-	private static void setMatrixSize(int matrixSize) {
-		PageRank.matrixSize = matrixSize;
-	}
-
-	private static List<Float> generateVector(int size) {
-		List<Float> vector = new ArrayList<Float>(size);
-		for (int i = 0; i < size; ++i) {
-			vector.add(1.0F / size);
+	private static double distance(List<Float> v1, List<Float> v2) {
+		if (v1.size() != v2.size()) {
+			throw new IllegalArgumentException(
+					"Vectors cannot have different lengths");
 		}
-		return vector;
+		double diff = 0;
+		for (int i = 0; i < v1.size(); ++i) {
+			diff += Math.abs(v1.get(i) - v2.get(i));
+		}
+		return diff;
 	}
 
 	public static void main(String args[]) throws Exception {
@@ -106,65 +108,60 @@ public class PageRank {
 			System.out.println("Parameters: input output matrixSize");
 			return;
 		}
-		
+
 		PageRank.setMatrixSize(Integer.parseInt(args[2]));
 		GraphToMatrix.setMatrixSize(PageRank.getMatrixSize());
 
-		
 		Path inputPath = new Path(args[0]);
 		Path outputPath = new Path(args[1]);
 		Path tempPath = new Path("temp");
-				
-        JobConf conf = new JobConf(PageRank.class);
-        conf.setJobName("pagerank");
-        
+
+		JobConf conf = new JobConf(PageRank.class);
+		conf.setJobName("pagerank");
+
 		JobConf matrixProcess = processGraph(inputPath, tempPath);
-        JobClient.runJob(matrixProcess);
-		
-        List<Float> vector = PageRank.generateVector(getMatrixSize());
-        List<Float> newVector = PageRank.generateVector(getMatrixSize());
-        
-        Configuration configuration = new Configuration();
-    	FileSystem fs = outputPath.getFileSystem(configuration);
-    	int steps = 0;
-    	double distance;
-        do {
-        	MatrixMult.setVector(vector);
-        	JobConf matrixMult = processMatrix(tempPath, outputPath);	
-        	fs.delete(outputPath, true);	
-        	JobClient.runJob(matrixMult);
+		JobClient.runJob(matrixProcess);
 
-        	
-        	for (FileStatus status : fs.listStatus(outputPath)) {
-        		Path path = status.getPath();
-        		if(!path.getName().startsWith("part-")) {
-        			continue;
-        		}
-            
-        		BufferedReader br = new BufferedReader(
-        				new InputStreamReader(fs.open(path)));
-        		String line = br.readLine();
-        		while (line != null) {
-        				String tokens[] = line.split("\\s+");
-        				newVector.set(Integer.parseInt(tokens[0]) - 1, Float.parseFloat(tokens[1]));
-        				line=br.readLine();
-        		}
-        		br.close();
-        	}
+		List<Float> vector = PageRank.generateVector(getMatrixSize());
+		List<Float> newVector = PageRank.generateVector(getMatrixSize());
 
-        
-        	distance = distance(vector, newVector);
-        	steps++;
-        	
-        	System.out.println(
-        			  "=================================================="
-        			+ "\nStep: " + steps 
-        			+ "\nPageRank vector: " + vector.toString()
-        			+ "\nNew PageRank vector: " + newVector.toString()
-        			+ "\nDifference: " + distance
-        			+ "\n==================================================");	
-        	    	
-        	Collections.copy(vector, newVector);
-        } while(distance > eps);
+		Configuration configuration = new Configuration();
+		FileSystem fs = outputPath.getFileSystem(configuration);
+		int steps = 0;
+		double distance;
+		do {
+			MatrixMult.setVector(vector);
+			JobConf matrixMult = processMatrix(tempPath, outputPath);
+			fs.delete(outputPath, true);
+			JobClient.runJob(matrixMult);
+
+			for (FileStatus status : fs.listStatus(outputPath)) {
+				Path path = status.getPath();
+				if (!path.getName().startsWith("part-")) {
+					continue;
+				}
+
+				BufferedReader br = new BufferedReader(new InputStreamReader(
+						fs.open(path)));
+				String line = br.readLine();
+				while (line != null) {
+					String tokens[] = line.split("\\s+");
+					newVector.set(Integer.parseInt(tokens[0]) - 1,
+							Float.parseFloat(tokens[1]));
+					line = br.readLine();
+				}
+				br.close();
+			}
+
+			distance = distance(vector, newVector);
+			steps++;
+
+			System.out.println("\n================" + "\nStep: " + steps
+					+ "\nPageRank vector: " + vector.toString()
+					+ "\nNew PageRank vector: " + newVector.toString()
+					+ "\nDifference: " + distance + "\n================");
+
+			Collections.copy(vector, newVector);
+		} while (distance > eps);
 	}
 }
