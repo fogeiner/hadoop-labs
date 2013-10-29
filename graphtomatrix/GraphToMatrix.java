@@ -19,6 +19,21 @@ public class GraphToMatrix {
 	private static Logger LOGGER = Logger.getLogger(GraphToMatrix.class
 			.getName());
 
+	private static int matrixSize;
+	private static double beta = 0.8;
+
+	public static double getBeta() {
+		return beta;
+	}
+
+	public static int getMatrixSize() {
+		return GraphToMatrix.matrixSize;
+	}
+
+	public static void setMatrixSize(int matrixSize) {
+		GraphToMatrix.matrixSize = matrixSize;
+	}
+
 	private static class Edge {
 		private int from;
 		private int to;
@@ -150,35 +165,19 @@ public class GraphToMatrix {
 		}
 	}
 
-	private static int matrixSize;
-	private static double beta = 0.8;
-
-	public static double getBeta() {
-		return beta;
-	}
-
-	public static int getMatrixSize() {
-		return GraphToMatrix.matrixSize;
-	}
-
-	public static void setMatrixSize(int matrixSize) {
-		GraphToMatrix.matrixSize = matrixSize;
-	}
-
 	public static void main(String[] args) throws Exception {
-
-		JobConf conf = new JobConf(GraphToMatrix.class);
 
 		if (args.length != 3 || args[2] == null) {
 			System.err
 					.println("The \"matrix_size\" (3rd argument) is not defined");
 			System.out.println("Usage: " + args[0]
 					+ " input_dir output_dir matrix_size");
-			return;
+			System.exit(-1);
 		}
 
 		setMatrixSize(Integer.parseInt(args[2]));
 
+		JobConf conf = new JobConf(GraphToMatrix.class);
 		conf.setJobName("graphtomatrix");
 		conf.setInputFormat(TextInputFormat.class);
 		conf.setOutputFormat(TextOutputFormat.class);
