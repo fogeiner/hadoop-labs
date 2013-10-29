@@ -1,0 +1,4 @@
+WARNING: a passphrase is an added layer of security in case you loose control of your private key. Think carefully about removing the password.
+
+
+Common reasons for removing a passphrase are when you want to automate a login. You may be better off setting up a new user with heavily restricted access permissions.
