@@ -1,4 +1,3 @@
-
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -94,13 +93,14 @@ public class MatrixMult {
         for (String token : args[2].split(" ")) {
             vector.add(Float.parseFloat(token));
         }
+        
         MatrixMult.setVector(vector);
 
         conf.setJobName("mmult");
 
         conf.setInputFormat(TextInputFormat.class);
+        conf.setOutputFormat(TextOutputFormat.class);
 
-        // Set the outputs for the Job
         conf.setMapOutputKeyClass(IntWritable.class);
         conf.setMapOutputValueClass(MapWritable.class);
         conf.setOutputKeyClass(IntWritable.class);
@@ -108,9 +108,7 @@ public class MatrixMult {
 
         conf.setMapperClass(Map.class);
         conf.setReducerClass(Reduce.class);
-        // conf.setCombinerClass(Reduce.class);
 
-        conf.setOutputFormat(TextOutputFormat.class);
 
         FileInputFormat.setInputPaths(conf, new Path(args[0]));
         FileOutputFormat.setOutputPath(conf, new Path(args[1]));
