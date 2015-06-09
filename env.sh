@@ -1,7 +1,7 @@
 #!/bin/bash
 
 HADOOP_VERSION=1.2.1
-HADOOP_HOME=/home/alstein/bin/hadoop-${HADOOP_VERSION}/
+HADOOP_HOME=~/bin/hadoop-${HADOOP_VERSION}/
 PATH=${HADOOP_HOME}/bin:$PATH
 
 function hall() {
